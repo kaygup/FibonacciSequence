@@ -1,76 +1,48 @@
-#include <iostream>
-#include <vector>
-#include <fstream>
+section .data
+    fmt db "%d ", 0  
+section .bss
+    num resb 16  
+section .text
+    global _start  
+    extern printf  
 
-int calculate(int numbers) {
-    std::vector< int > sequence;
+_start:
+    mov rdi, 10
+    call fibonacci
+    mov rax, 60
+    xor rdi, rdi
+    syscall  
 
-    sequence.push_back(0);
-    sequence.push_back(1);
+fibonacci:
+    mov rsi, num
+    mov dword [rsi], 0
+    mov dword [rsi+4], 1
+    mov rcx, 2
 
-    int lastNum = 0;
-    int thisNum = 1;
+.loop:
+    cmp rcx, rdi
+    jge .done
+    mov eax, [rsi+4*(rcx-1)]
+    add eax, [rsi+4*(rcx-2)]
+    mov [rsi+4*rcx], eax
+    inc rcx
+    jmp .loop
 
-    for (int i = 0; i < numbers; i++) {
-        int CalcedNum = lastNum + thisNum;
-        if (CalcedNum < 0) {
-            CalcedNum *= -1;
-        }
+.done:
+    mov rcx, rdi
+    mov rsi, num
+    call print_fibonacci
+    ret  
 
-        lastNum = thisNum;
-        thisNum = CalcedNum;
-
-        sequence.push_back(CalcedNum);
-    }
-
-    for (auto & element : sequence) {
-        if (element != 0) {
-            std::cout << ",";
-        }
-        std::cout << element;
-    }
-    std::cout << std::endl;
-    std::cout << "Would you like to save the result? (y/n) ";
-
-    std::string seqRes;
-    std::cin >> seqRes;
-    if (seqRes == "y") {
-        std::string fileName;
-        std::cout << "File name: ";
-        std::cin >> fileName;
-
-        std::ofstream resFile(fileName + ".txt");
-        for (auto& seqNum : sequence) {
-            if (seqNum != 0) {
-                resFile << "," << seqNum;
-            } else {
-                resFile << seqNum;
-            }
-        }
-        resFile.close();
-
-        std::cout << std::endl << "Write to file: " << fileName << ".txt";
-
-    }
-    std::cout << std::endl << "Press any key to continue";
-    return 0;
-}
-
-void mainloop() {
-    int numberstogen;
-    std::cout << "How many numbers would you like to calculate: ";
-    std::cin >> numberstogen;
-
-    calculate(numberstogen);
-
-    system("pause >nul");
-}
-
-int main() {
-    system("title Fibonacci Sequence Calculator");
-    while (true) {
-        system("cls"); 
-        mainloop();
-    }
-    return 0;
-}
+print_fibonacci:
+    cmp rcx, 0
+    je .exit
+    push rcx
+    mov rdi, fmt
+    mov rsi, [num]
+    call printf
+    add num, 4
+    pop rcx
+    loop print_fibonacci
+.exit:
+    ret  
